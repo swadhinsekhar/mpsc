@@ -40,7 +40,7 @@
        fchmod(2)      To change the permissions of a shared memory object.
 */
 
-int main()
+int main(int argc, char *argv[])
 {
     shmem_open_param_t  param;
     shmem_obj_t         shmem_obj;
@@ -49,5 +49,9 @@ int main()
     param.access_mode = SHMEM_ACCESS_MODE_WR;
     param.mmap_size = 64;
 
-    shmem_obj.objmem = open_shmem_pool(&param);
+    shmem_obj.objmem = open_shmem_pool(&param, &shmem_obj);
+
+    if(argc == 2) {
+        destroy_shmem_pool(&shmem_obj);
+    }
 }

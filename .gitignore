@@ -36,3 +36,5 @@ deployment.plan
 terraform.tfstate*
 tags
 *.out
+master
+slave

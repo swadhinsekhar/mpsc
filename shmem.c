@@ -12,7 +12,7 @@
 
 #include "shmem.h"
 
-void *open_shmem_pool(shmem_open_param_t *param)
+void *open_shmem_pool(shmem_open_param_t *param, shmem_obj_t *shmem_obj)
 {
     struct stat st;
     int         fd = -1, err, ac_mode = O_RDWR;
@@ -68,42 +68,36 @@ void *open_shmem_pool(shmem_open_param_t *param)
         goto out;
     }
 
+    if(NULL != shmem_obj) {
+        shmem_obj->fd = fd;
+        shmem_obj->mode = ac_mode;
+        shmem_obj->mmap_sz = param->mmap_size;
+        snzprintf(shmem_obj->fname, "%s", param->filename);
+    }
     return addr;
 
 out:
-    if(fd) {
-        if(shm_unlink(param->filename) < 0) {
-            printf("Error in shm_unlink "
-                "err: (%d) - (%s)\n",
-            errno, strerror(errno));
-        }
+    if (fd) {
         close(fd);
     }
 
     return NULL;
 }
 
-typedef struct shmem_obj
-{
-    int32_t     mode;
-    int32_t     fd;
-    uint32_t    mmap_sz;
-    char        fname[64];
-    void        *objmem;
-
-} shmem_obj_t;
-
 int destroy_shmem_pool(shmem_obj_t *obj)
 {
 
+    printf("Deleting shmem object : %s\n", obj->fname);
     munmap(obj->objmem, obj->mmap_sz);
-    if (obj->fd) close(obj->fd);
-    if(shm_unlink(param->filename) < 0) {
+    if (shm_unlink(obj->fname) < 0) {
         printf("Error in shm_unlink "
                 "err: (%d) - (%s)\n",
                 errno, strerror(errno));
     }
+    if (obj->fd) close(obj->fd);
 
     obj->objmem = NULL;
     obj->mmap_sz = 0;
+
+    return 0;
 }

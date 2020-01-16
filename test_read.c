@@ -18,5 +18,5 @@ int main(int argc, char **argv)
     param.access_mode = SHMEM_ACCESS_MODE_RD;
     param.mmap_size = 64;
 
-    open_shmem_pool(&param);
+    open_shmem_pool(&param, NULL);
 }

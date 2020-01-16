@@ -25,6 +25,17 @@ typedef struct shmem_open_param {
 
 } shmem_open_param_t;
 
-void *open_shmem_pool(shmem_open_param_t *param);
+typedef struct shmem_obj
+{
+    int32_t     mode;
+    int32_t     fd;
+    uint32_t    mmap_sz;
+    char        fname[64];
+    void        *objmem;
+
+} shmem_obj_t;
+
+void *open_shmem_pool(shmem_open_param_t *param, shmem_obj_t *obj);
+int destroy_shmem_pool(shmem_obj_t *obj);
 
 #endif
