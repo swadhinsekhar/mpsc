@@ -19,8 +19,8 @@ void *open_shmem_pool(shmem_open_param_t *param, shmem_obj_t *shmem_obj)
     bool        new = false;
     char        fname[128];
 
-    if((SHMEM_ACCESS_MODE_RD != param->access_mode) &&
-       (SHMEM_ACCESS_MODE_WR != param->access_mode)) {
+    if ((SHMEM_ACCESS_MODE_RD != param->access_mode) &&
+        (SHMEM_ACCESS_MODE_WR != param->access_mode)) {
         printf("Access mode wrong!!\n");
         goto out;
     }
@@ -30,8 +30,9 @@ void *open_shmem_pool(shmem_open_param_t *param, shmem_obj_t *shmem_obj)
     if (-1 == stat((const char *)fname, &st)) {
         err = errno;
         if ((ENOENT != err) || (SHMEM_ACCESS_MODE_RD == param->access_mode)) {
-            printf("file: (%s) stat failed. err (%d). (%s)\n",
-                fname, err, strerror(err));
+            printf("shared memory not found or not created "
+                "(%s) stat failed. err (%d). (%s)\n",
+                 param->filename, err, strerror(err));
             goto out;
         }
         new = true;
@@ -61,14 +62,13 @@ void *open_shmem_pool(shmem_open_param_t *param, shmem_obj_t *shmem_obj)
     }
 
     void *addr = mmap(NULL, param->mmap_size, PROT_WRITE, MAP_SHARED, fd, 0);
-    if (NULL == addr) {
-        printf("Error in mmap "
-            "err: %d - (%s)\n",
+    if ((NULL == addr) && (addr == MAP_FAILED)) {
+        printf("Error in mmap err: %d - (%s)\n",
             errno, strerror(errno));
         goto out;
     }
 
-    if(NULL != shmem_obj) {
+    if (NULL != shmem_obj) {
         shmem_obj->fd = fd;
         shmem_obj->mode = ac_mode;
         shmem_obj->mmap_sz = param->mmap_size;
@@ -86,18 +86,23 @@ out:
 
 int destroy_shmem_pool(shmem_obj_t *obj)
 {
-
     printf("Deleting shmem object : %s\n", obj->fname);
-    munmap(obj->objmem, obj->mmap_sz);
-    if (shm_unlink(obj->fname) < 0) {
-        printf("Error in shm_unlink "
+
+    if (obj->fd > 0) {
+
+        munmap(obj->objmem, obj->mmap_sz);
+
+        if (shm_unlink(obj->fname) < 0) {
+            printf("Error in shm_unlink "
                 "err: (%d) - (%s)\n",
                 errno, strerror(errno));
-    }
-    if (obj->fd) close(obj->fd);
+        }
 
-    obj->objmem = NULL;
-    obj->mmap_sz = 0;
+        close(obj->fd);
+        obj->objmem = NULL;
+        obj->mmap_sz = 0;
+        obj->fd = -1;
+    }
 
     return 0;
 }
